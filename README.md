@@ -2,4 +2,4 @@
 AWS resources running in account
 
 
-Using as refernce - https://github.com/movio/aws-prometheus-exporter
+Using as reference - https://github.com/movio/aws-prometheus-exporter
