@@ -2,7 +2,7 @@
 # ####################################################
 #
 
-NAME := "nitindas/flask-tutorial"
+NAME := "nitindas/aws-api-prometheus-exporter"
 TAG := $$(git log --pretty=format:'' | wc -l)
 # TAG  := $$(git log -1 --pretty=%h)
 IMG := ${NAME}:${TAG}
