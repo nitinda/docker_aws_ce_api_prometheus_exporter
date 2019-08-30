@@ -51,7 +51,7 @@ def main(args):
     print("Serving at port: %s" % port)
     while True:
         try:
-            print("Starting Again the collection ", datetime.datetime.now())
+            print("Starting the collection again : ", datetime.datetime.now())
             collector.update()
             time.sleep(args.period_seconds)
         except KeyboardInterrupt:

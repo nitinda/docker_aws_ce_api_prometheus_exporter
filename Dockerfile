@@ -5,16 +5,17 @@ RUN apt-get update -y && apt-get clean
 WORKDIR /opt/aws_prometheus_exporter
 
 COPY requirements.txt /opt/aws_prometheus_exporter/
+COPY aws_prometheus_exporter/*.py /opt/aws_prometheus_exporter/
+COPY metrics-cost-explorer.yaml /mnt/metrics.yaml
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY aws_prometheus_exporter/*.py /opt/aws_prometheus_exporter/
-COPY metrics.yaml /mnt/metrics.yaml
-
-
-EXPOSE 9000
-
 ENV PYTHONPATH="/opt"
+ENV APPPORT=9000
+ENV PERIOD_SECONDS=20
 
-ENTRYPOINT [ "python", "-u", "/opt/aws_prometheus_exporter", "-p", "9000" ]
-CMD [ "-f", "/mnt/metrics.yaml", "-s", "200" ]
+EXPOSE ${APPPORT}
+
+ENTRYPOINT python -u /opt/aws_prometheus_exporter -p ${APPPORT} -f /mnt/metrics.yaml -s ${PERIOD_SECONDS}
+
+CMD ["/bin/bash"]
