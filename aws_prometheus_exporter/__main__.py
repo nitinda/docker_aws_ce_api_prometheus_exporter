@@ -97,7 +97,6 @@ def main(args):
             print("Starting the collection again : ", datetime.datetime.now())
             collector.update()
             time.sleep(args.period_seconds)
-            print("Sleeping Time Over")
         except KeyboardInterrupt:
             print("Caught SIGTERM - stopping...")
             break

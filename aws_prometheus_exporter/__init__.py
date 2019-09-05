@@ -99,7 +99,6 @@ class AwsMetricsCollector:
 
     def _refresh(self):
         " Refresh tokens by calling assume_role again "
-        print(self._rolearn)
         params = {
             "RoleArn": self._rolearn,
             "RoleSessionName": self._session_name,
@@ -131,7 +130,6 @@ class AwsMetricsCollector:
         session = get_session()
         session._credentials = session_credentials
         autorefresh_session = Session(botocore_session=session)
-        print(metric.service)
         service = autorefresh_session.client(metric.service)
         # service = self._session.client(metric.service)
         paginator = service.get_paginator(metric.method)
