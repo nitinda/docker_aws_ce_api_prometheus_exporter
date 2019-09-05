@@ -29,8 +29,8 @@ def parse_args():
         help='listen to this port'
     )
     parser.add_argument(
-        '-a', '--assume-role',
-        metavar='ARN',
+        '--assume-role',
+        metavar='ROLEARN',
         dest="assume_role_arn",
         required=True,
         type=str,
@@ -46,8 +46,8 @@ def parse_args():
         help='seconds between metric refreshes'
     )
     parser.add_argument(
-        '-r', '--region-name',
-        metavar='ARN',
+        '--region-name',
+        metavar='REGIONNAME',
         dest="region_name",
         required=False,
         type=str,
@@ -58,7 +58,6 @@ def parse_args():
 
 def filter_none_values(kwargs: dict) -> dict:
     return {k: v for k, v in kwargs.items() if v is not None}
-
 
 def assume_session(role_session_name: str,
     role_arn: str,
@@ -87,7 +86,8 @@ def main(args):
     with open(args.metrics_file_path) as metrics_file:
         metrics_yaml = metrics_file.read()
     metrics = parse_aws_metrics(metrics_yaml)
-    collector = AwsMetricsCollector(metrics, boto3.Session())
+    session = assume_session("prometheusRoleSession",args.assume_role_arn,region_name=args.region_name)
+    collector = AwsMetricsCollector(metrics, session)
     REGISTRY.register(collector)
     start_http_server(port)
     print("Serving at port: %s" % port)
@@ -100,7 +100,6 @@ def main(args):
             print("Caught SIGTERM - stopping...")
             break
     print("Done.")
-
 
 
 
