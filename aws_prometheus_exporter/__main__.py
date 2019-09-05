@@ -3,6 +3,7 @@ import argparse
 
 import boto3
 import datetime
+import sys
 
 from aws_prometheus_exporter import AwsMetric, AwsMetricsCollector, parse_aws_metrics
 from prometheus_client import REGISTRY, start_http_server
@@ -56,38 +57,38 @@ def parse_args():
     )
     return parser.parse_args()
 
-def filter_none_values(kwargs: dict) -> dict:
-    return {k: v for k, v in kwargs.items() if v is not None}
+# def filter_none_values(kwargs: dict) -> dict:
+#     return {k: v for k, v in kwargs.items() if v is not None}
 
-def assume_session(role_session_name: str,
-    role_arn: str,
-    duration_seconds: int = None,
-    region_name: str = "eu-central-1",) -> boto3.Session:
-    assume_role_kwargs = filter_none_values(
-        {
-            "RoleSessionName": role_session_name,
-            "RoleArn": role_arn,
-            "DurationSeconds": duration_seconds,
-        }
-    )
-    credentials = boto3.client("sts").assume_role(**assume_role_kwargs)["Credentials"]
-    create_session_kwargs = filter_none_values(
-        {
-            "aws_access_key_id": credentials["AccessKeyId"],
-            "aws_secret_access_key": credentials["SecretAccessKey"],
-            "aws_session_token": credentials["SessionToken"],
-            "region_name": region_name,
-        }
-    )
-    return boto3.Session(**create_session_kwargs)
+# def assume_session(role_session_name: str,
+#     role_arn: str,
+#     duration_seconds: int = 900,
+#     region_name: str = "eu-central-1",) -> boto3.Session:
+#     assume_role_kwargs = filter_none_values(
+#         {
+#             "RoleSessionName": role_session_name,
+#             "RoleArn": role_arn,
+#             "DurationSeconds": duration_seconds,
+#         }
+#     )
+#     credentials = boto3.client("sts").assume_role(**assume_role_kwargs)["Credentials"]
+#     create_session_kwargs = filter_none_values(
+#         {
+#             "aws_access_key_id": credentials["AccessKeyId"],
+#             "aws_secret_access_key": credentials["SecretAccessKey"],
+#             "aws_session_token": credentials["SessionToken"],
+#             "region_name": region_name,
+#             "expiry_time": credentials["Expiration"].isoformat(),
+#         }
+#     )
+#     return boto3.Session(**create_session_kwargs)
 
 def main(args):
     port = int(args.port)
     with open(args.metrics_file_path) as metrics_file:
         metrics_yaml = metrics_file.read()
     metrics = parse_aws_metrics(metrics_yaml)
-    session = assume_session("prometheusRoleSession",args.assume_role_arn,region_name=args.region_name)
-    collector = AwsMetricsCollector(metrics, session)
+    collector = AwsMetricsCollector(metrics, boto3.client("sts", region_name=args.region_name), args.assume_role_arn)
     REGISTRY.register(collector)
     start_http_server(port)
     print("Serving at port: %s" % port)
@@ -96,6 +97,7 @@ def main(args):
             print("Starting the collection again : ", datetime.datetime.now())
             collector.update()
             time.sleep(args.period_seconds)
+            print("Sleeping Time Over")
         except KeyboardInterrupt:
             print("Caught SIGTERM - stopping...")
             break

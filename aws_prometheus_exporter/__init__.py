@@ -8,11 +8,17 @@ import unittest.mock as mock
 from collections import namedtuple
 from threading import Thread, Lock, Event
 
+
 import yaml
 import boto3
 import jmespath
 from prometheus_client.core import REGISTRY, GaugeMetricFamily
 from prometheus_client import start_http_server
+
+
+from botocore.credentials import RefreshableCredentials
+from botocore.session import get_session
+from boto3 import Session
 
 __all__ = ["AwsMetric", "AwsMetricsCollector", "parse_aws_metrics"]
 
@@ -50,7 +56,7 @@ class AwsMetricsCollector:
     See __main__.py for an example of usage.
     """
 
-    def __init__(self, metrics, session, label_names=None, label_values=None):
+    def __init__(self, metrics, session, rolearn, session_name="prometheusAssumeRole", label_names=None, label_values=None):
         """
         metrics: a list of AwsMetric objects
         session: a boto3 session with an AWS region_name configured
@@ -60,11 +66,13 @@ class AwsMetricsCollector:
         super().__init__()
         self._session = session
         self._metrics = metrics
+        self._rolearn = rolearn
+        self._session_name = session_name
         self._data_lock = Lock()
         self._data = {}  # dict of metric_name to list of (label_values, value)
         self._label_names = label_names or []
         self._label_values = label_values or []
-
+    
     def update(self):
         """
         Makes the boto3 API calls, collects the results, and stores them for use when collect() gets
@@ -89,6 +97,23 @@ class AwsMetricsCollector:
                     gauge.add_metric(label_values, value)
                 yield gauge
 
+    def _refresh(self):
+        " Refresh tokens by calling assume_role again "
+        print(self._rolearn)
+        params = {
+            "RoleArn": self._rolearn,
+            "RoleSessionName": self._session_name,
+            "DurationSeconds": 900,
+        }
+        response = self._session.assume_role(**params).get("Credentials")
+        credentials = {
+            "access_key": response.get("AccessKeyId"),
+            "secret_key": response.get("SecretAccessKey"),
+            "token": response.get("SessionToken"),
+            "expiry_time": response.get("Expiration").isoformat(),
+        }
+        return credentials
+    
     def _collect_metric(self, metric):
         responses = self._call_paginator(metric) if metric.use_paginator else self._call_service_method(metric)
         assert all(isinstance(r, dict) for r in responses), "responses '%s' must a sequence of dicts" % responses
@@ -102,13 +127,24 @@ class AwsMetricsCollector:
         return result
 
     def _call_paginator(self, metric):
-        service = self._session.client(metric.service)
+        session_credentials = RefreshableCredentials.create_from_metadata(metadata=self._refresh(),refresh_using=self._refresh,method="sts-assume-role",)
+        session = get_session()
+        session._credentials = session_credentials
+        autorefresh_session = Session(botocore_session=session)
+        print(metric.service)
+        service = autorefresh_session.client(metric.service)
+        # service = self._session.client(metric.service)
         paginator = service.get_paginator(metric.method)
         paginate_response_iterator = paginator.paginate(**metric.method_args)
         return list(paginate_response_iterator.search(metric.search))
 
     def _call_service_method(self, metric):
-        service = self._session.client(metric.service)
+        session_credentials = RefreshableCredentials.create_from_metadata(metadata=self._refresh(),refresh_using=self._refresh,method="sts-assume-role",)
+        session = self._session
+        session._credentials = session_credentials
+        autorefresh_session = Session(botocore_session=session)
+        service = autorefresh_session.client(metric.service)
+        # service = self._session.client(metric.service)
         service_method = getattr(service, metric.method)
         next_token = ''
         responses = []
