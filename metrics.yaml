@@ -21,31 +21,31 @@ ec2_instance_information:
     Reservations[].Instances[].{instance_id: InstanceId, instance_type: InstanceType, instance_state: State.Name, instance_lifecycle: InstanceLifecycle, value: `1`}
 
 
-aws_service_information:
-  description: AWS running in account
-  service: ce
-  method: get_cost_and_usage
-  method_args: |
-    {
-      "TimePeriod": {
-        "Start": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
-        "End": datetime.now().strftime("%Y-%m-%d")
-      },
-      "Granularity": 'MONTHLY',
-      "Metrics": ["BlendedCost","UnblendedCost"],
-      "GroupBy": [
-        {
-          "Type": "DIMENSION",
-          "Key": "SERVICE"
-        }
-      ]
-    }
-  label_names:
-    - aws_service_name
-    - blended_cost_amount
-    - blended_cost_unit
-  search: |
-    ResultsByTime[].Groups[].{aws_service_name: Keys[0], blended_cost_amount: Metrics.UnblendedCost.Amount, blended_cost_unit: Metrics.UnblendedCost.Unit, value: `1`}
+# aws_service_information:
+#   description: AWS running in account
+#   service: ce
+#   method: get_cost_and_usage
+#   method_args: |
+#     {
+#       "TimePeriod": {
+#         "Start": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+#         "End": datetime.now().strftime("%Y-%m-%d")
+#       },
+#       "Granularity": 'MONTHLY',
+#       "Metrics": ["BlendedCost","UnblendedCost"],
+#       "GroupBy": [
+#         {
+#           "Type": "DIMENSION",
+#           "Key": "SERVICE"
+#         }
+#       ]
+#     }
+#   label_names:
+#     - aws_service_name
+#     - blended_cost_amount
+#     - blended_cost_unit
+#   search: |
+#     ResultsByTime[].Groups[].{aws_service_name: Keys[0], blended_cost_amount: Metrics.UnblendedCost.Amount, blended_cost_unit: Metrics.UnblendedCost.Unit, value: `1`}
 
 
 # recent_emr_cluster_ids:
