@@ -29,6 +29,14 @@ def parse_args():
         help='listen to this port'
     )
     parser.add_argument(
+        '-r', '--assume-role',
+        metavar='ARN',
+        dest="assume_role_arn",
+        required=True,
+        type=str,
+        help='Assume role arn'
+    )
+    parser.add_argument(
         '-s', '--period-seconds',
         metavar='SECONDS',
         dest="period_seconds",
@@ -37,8 +45,42 @@ def parse_args():
         default=30,
         help='seconds between metric refreshes'
     )
+    parser.add_argument(
+        '-r', '--region-name',
+        metavar='ARN',
+        dest="region_name",
+        required=False,
+        type=str,
+        default="eu-central-1",
+        help='Region name'
+    )
     return parser.parse_args()
 
+def filter_none_values(kwargs: dict) -> dict:
+    return {k: v for k, v in kwargs.items() if v is not None}
+
+
+def assume_session(role_session_name: str,
+    role_arn: str,
+    duration_seconds: int = None,
+    region_name: str = "eu-central-1",) -> boto3.Session:
+    assume_role_kwargs = filter_none_values(
+        {
+            "RoleSessionName": role_session_name,
+            "RoleArn": role_arn,
+            "DurationSeconds": duration_seconds,
+        }
+    )
+    credentials = boto3.client("sts").assume_role(**assume_role_kwargs)["Credentials"]
+    create_session_kwargs = filter_none_values(
+        {
+            "aws_access_key_id": credentials["AccessKeyId"],
+            "aws_secret_access_key": credentials["SecretAccessKey"],
+            "aws_session_token": credentials["SessionToken"],
+            "region_name": region_name,
+        }
+    )
+    return boto3.Session(**create_session_kwargs)
 
 def main(args):
     port = int(args.port)
@@ -58,6 +100,8 @@ def main(args):
             print("Caught SIGTERM - stopping...")
             break
     print("Done.")
+
+
 
 
 main(parse_args())
