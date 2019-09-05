@@ -29,7 +29,7 @@ def parse_args():
         help='listen to this port'
     )
     parser.add_argument(
-        '-r', '--assume-role',
+        '-a', '--assume-role',
         metavar='ARN',
         dest="assume_role_arn",
         required=True,
