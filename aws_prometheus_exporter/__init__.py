@@ -139,7 +139,7 @@ class AwsMetricsCollector:
 
     def _call_service_method(self, metric):
         session_credentials = RefreshableCredentials.create_from_metadata(metadata=self._refresh(),refresh_using=self._refresh,method="sts-assume-role",)
-        session = self._session
+        session = get_session()
         session._credentials = session_credentials
         autorefresh_session = Session(botocore_session=session)
         service = autorefresh_session.client(metric.service)
