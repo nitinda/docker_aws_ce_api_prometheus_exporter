@@ -56,7 +56,7 @@ class AwsMetricsCollector:
     See __main__.py for an example of usage.
     """
 
-    def __init__(self, metrics, session, rolearn, session_name="prometheusAssumeRole", label_names=None, label_values=None):
+    def __init__(self, metrics, session, rolearn, session_name, duration_seconds, label_names=None, label_values=None):
         """
         metrics: a list of AwsMetric objects
         session: a boto3 session with an AWS region_name configured
@@ -68,6 +68,7 @@ class AwsMetricsCollector:
         self._metrics = metrics
         self._rolearn = rolearn
         self._session_name = session_name
+        self._duration_seconds = duration_seconds
         self._data_lock = Lock()
         self._data = {}  # dict of metric_name to list of (label_values, value)
         self._label_names = label_names or []
@@ -102,7 +103,7 @@ class AwsMetricsCollector:
         params = {
             "RoleArn": self._rolearn,
             "RoleSessionName": self._session_name,
-            "DurationSeconds": 900,
+            "DurationSeconds": self._duration_seconds,
         }
         response = self._session.assume_role(**params).get("Credentials")
         credentials = {
