@@ -97,7 +97,7 @@ def main(args):
     with open(args.metrics_file_path) as metrics_file:
         metrics_yaml = metrics_file.read()
     metrics = parse_aws_metrics(metrics_yaml)
-    collector = AwsMetricsCollector(metrics, boto3.client("sts", region_name=args.region_name), args.assume_role_arn, "prometheusAssumeRole", args.duration_seconds)
+    collector = AwsMetricsCollector(metrics, boto3.client("sts"), args.assume_role_arn, "prometheusAssumeRole", args.duration_seconds)
     REGISTRY.register(collector)
     start_http_server(port)
     print("Serving at port: %s" % port)
