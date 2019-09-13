@@ -7,7 +7,7 @@ import argparse
 import unittest.mock as mock
 from collections import namedtuple
 from threading import Thread, Lock, Event
-
+from dateutil.tz import tzutc
 
 import yaml
 import boto3
