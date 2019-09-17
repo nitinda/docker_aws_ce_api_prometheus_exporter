@@ -1,51 +1,51 @@
-# ec2_instance_information:
-#   description: EC2 instance information
-#   service: ec2
-#   paginator: describe_instances
-#   paginator_args: |
-#     {
-#       "Filters": 
-#         [
-#           {
-#             "Name": "instance-state-name",
-#             "Values": ["running","stopped"]
-#           }
-#         ]
-#     }
-#   label_names:
-#     - instance_id
-#     - instance_type
-#     - instance_state
-#     - instance_lifecycle
-#   search: |
-#     Reservations[].Instances[].{instance_id: InstanceId, instance_type: InstanceType, instance_state: State.Name, instance_lifecycle: InstanceLifecycle, value: `1`}
-
-
-aws_services_information:
-  description: AWS Services running in account
-  service: ce
-  method: get_cost_and_usage
-  method_args: |
+ec2_instance_information:
+  description: EC2 instance information
+  service: ec2
+  paginator: describe_instances
+  paginator_args: |
     {
-      "TimePeriod": {
-        "Start": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
-        "End": datetime.now().strftime("%Y-%m-%d")
-      },
-      "Granularity": 'MONTHLY',
-      "Metrics": ["BlendedCost","UnblendedCost"],
-      "GroupBy": [
-        {
-          "Type": "DIMENSION",
-          "Key": "SERVICE"
-        }
-      ]
+      "Filters": 
+        [
+          {
+            "Name": "instance-state-name",
+            "Values": ["running","stopped"]
+          }
+        ]
     }
   label_names:
-    - aws_service_name
-    - blended_cost_amount
-    - blended_cost_unit
+    - instance_id
+    - instance_type
+    - instance_state
+    - instance_lifecycle
   search: |
-    ResultsByTime[].Groups[].{aws_service_name: Keys[0], blended_cost_amount: Metrics.UnblendedCost.Amount, blended_cost_unit: Metrics.UnblendedCost.Unit, value: `1`}
+    Reservations[].Instances[].{instance_id: InstanceId, instance_type: InstanceType, instance_state: State.Name, instance_lifecycle: InstanceLifecycle, value: `1`}
+
+
+# aws_services_information:
+#   description: AWS Services running in account
+#   service: ce
+#   method: get_cost_and_usage
+#   method_args: |
+#     {
+#       "TimePeriod": {
+#         "Start": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+#         "End": datetime.now().strftime("%Y-%m-%d")
+#       },
+#       "Granularity": 'MONTHLY',
+#       "Metrics": ["BlendedCost","UnblendedCost"],
+#       "GroupBy": [
+#         {
+#           "Type": "DIMENSION",
+#           "Key": "SERVICE"
+#         }
+#       ]
+#     }
+#   label_names:
+#     - aws_service_name
+#     - blended_cost_amount
+#     - blended_cost_unit
+#   search: |
+#     ResultsByTime[].Groups[].{aws_service_name: Keys[0], blended_cost_amount: Metrics.UnblendedCost.Amount, blended_cost_unit: Metrics.UnblendedCost.Unit, value: `1`}
 
 
 # recent_emr_cluster_ids:
